@@ -1,0 +1,104 @@
+[build-system]
+requires = [
+    "setuptools>=67.0",
+    "wheel",
+    "torch>=2.0.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nndet"
+version = "0.2.0"
+description = "Self-configuring framework for 3D (medical) object detection"
+readme = "README.md"
+requires-python = ">=3.9,<3.13"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Division of Medical Image Computing, German Cancer Research Center", email = "m.baumgartner@dkfz-heidelberg.de"},
+]
+maintainers = [
+    {name = "Division of Medical Image Computing, German Cancer Research Center", email = "m.baumgartner@dkfz-heidelberg.de"},
+]
+keywords = ["deep learning", "medical image analysis", "object detection", "3D detection", "medical imaging"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+
+dependencies = [
+    "torch>=2.6.0,<2.7.0",
+    "torchvision>=0.21.0,<0.22.0",
+    "lightning>=2.0.0",
+    "batchgenerators>=0.24",
+    "nnunet==1.7.1",
+    "scipy",
+    "scikit-learn",
+    "scikit-image>=0.14",
+    "pandas>=0.8.1",
+    "PyYAML>=5.1,!=5.4.*",
+    "nevergrad",
+    "dicom2nifti",
+    "medpy",
+    "SimpleITK>=2.1.0",
+    "tqdm",
+    "loguru",
+    "hydra-core>=1.1.0",
+    "mlflow",
+    "GitPython",
+    "matplotlib",
+    "seaborn",
+    "torchmetrics>=0.11.0",
+    "python-gdcm<3.0.26",
+]
+
+[project.urls]
+Homepage = "https://github.com/MIC-DKFZ/nnDetection"
+Documentation = "https://github.com/MIC-DKFZ/nnDetection"
+Repository = "https://github.com/MIC-DKFZ/nnDetection"
+"Bug Tracker" = "https://github.com/MIC-DKFZ/nnDetection/issues"
+
+[project.scripts]
+nndet_example = "scripts.generate_example:main"
+nndet_prep = "scripts.preprocess:main"
+nndet_cls2fg = "scripts.convert_cls2fg:main"
+nndet_seg2det = "scripts.convert_seg2det:main"
+nndet_train = "scripts.train:train"
+nndet_sweep = "scripts.train:sweep"
+nndet_eval = "scripts.train:evaluate"
+nndet_predict = "scripts.predict:main"
+nndet_consolidate = "scripts.consolidate:main"
+nndet_boxes2nii = "scripts.utils:boxes2nii"
+nndet_seg2nii = "scripts.utils:seg2nii"
+nndet_unpack = "scripts.utils:unpack"
+nndet_env = "scripts.utils:env"
+nndet_searchpath = "scripts.utils:hydra_searchpath"
+
+[tool.setuptools]
+packages = {find = {}}
+include-package-data = true
+
+[tool.setuptools.package-data]
+nndet = ["**/*.yaml", "**/*.yml", "**/*.json"]
+
+[tool.pycodestyle]
+exclude = [".eggs", "*.egg", "build", "docs/*", ".git", "*/conf.py"]
+ignore = ["E402", "E721"]
+max-line-length = 120
+
+[tool.coverage.run]
+source = ["nndet"]
+omit = [
+    "*__init__.py",
+    "*registry.py",
+    "tests/*",
+]
+
