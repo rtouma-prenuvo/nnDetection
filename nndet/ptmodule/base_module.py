@@ -21,8 +21,8 @@ from time import time
 from typing import Any, Callable, Dict, Optional, Sequence, Hashable, Type, TypeVar
 
 import torch
-import pytorch_lightning as pl
-from pytorch_lightning.core.memory import ModelSummary
+import lightning.pytorch as pl
+from lightning.pytorch.utilities.model_summary import ModelSummary
 from loguru import logger
 
 from nndet.io.load import save_txt
@@ -79,14 +79,13 @@ class LightningBaseModule(pl.LightningModule):
         self.epoch_start_tic = time()
         return super().on_epoch_start()
     
-    def validation_epoch_end(self, validation_step_outputs):
+    def on_validation_epoch_end(self):
         """
         Print time of epoch
         (needed for cluster where progress bar is deactivated)
         """
         self.epoch_end_toc = time()
         logger.info(f"This epoch took {int(self.epoch_end_toc - self.epoch_start_tic)} s")
-        return super().validation_epoch_end(validation_step_outputs)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """

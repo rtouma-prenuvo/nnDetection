@@ -19,7 +19,7 @@ from pathlib import Path
 from collections import OrderedDict
 
 import numpy as np
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 from loguru import logger
 from sklearn.model_selection import KFold
 
