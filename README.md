@@ -2,11 +2,9 @@
 
 <img src=docs/source/nnDetection.svg width="600px">
 
-![Version](https://img.shields.io/badge/nnDetection-v0.1-blue)
-![Python](https://img.shields.io/badge/python-3.8+-orange)
-![CUDA](https://img.shields.io/badge/CUDA-10.1%2F10.2%2F11.0-green)
-
 </div>
+
+> **Note:** Version 0.2 adds PyTorch 2.x and Lightning 2.x support. See [MIGRATION_PYTORCH2.md](MIGRATION_PYTORCH2.md) for upgrade details.
 
 # What is nnDetection?
 Simultaneous localisation and categorization of objects in medical images, also referred to as medical object detection, is of high clinical relevance because diagnostic decisions depend on rating of objects rather than e.g. pixels.
@@ -73,22 +71,14 @@ pip install -r requirements.txt  \
 FORCE_CUDA=1 pip install -v -e .
 ```
 
-## Source
+## Source (PyTorch 2.x)
 
-*Please note that nndetection requires Python 3.8+.*
-*Please use PyTorch 1.X version for now and not 2.0*
+For PyTorch 2.x / Lightning 2.x installations, see detailed instructions in [MIGRATION_PYTORCH2.md](MIGRATION_PYTORCH2.md).
 
-1. Install CUDA (>10.1) and cudnn (make sure to select [compatible versions](https://docs.nvidia.com/deeplearning/cudnn/support-matrix/index.html)!)
-2. [Optional] Depending on your GPU you might need to set `TORCH_CUDA_ARCH_LIST`, check [compute capabilities](https://developer.nvidia.com/cuda-gpus) here.
-3. Install [torch](https://pytorch.org/) (make sure to match the pytorch and CUDA versions!) (requires pytorch >1.10+) and [torchvision](https://github.com/pytorch/vision)(make sure to match the versions!).
-4. Clone nnDetection, `cd [path_to_repo]` and `pip install -e .`
-5. Set environment variables (more info can be found below):
-    - `det_data`: [required] Path to the source directory where all the data will be located
-    - `det_models`: [required] Path to directory where all models will be saved
-    - `OMP_NUM_THREADS=1` : [required] Needs to be set! Otherwise bad things will happen... Refer to batchgenerators documentation.
-    - `det_num_threads`: [recommended] Number processes to use for augmentation (at least 6, default 12)
-    - `det_verbose`: [optional] Can be used to deactivate progress bars (activated by default)
-    - `MLFLOW_TRACKING_URI`: [optional] Specify the logging directory of mlflow. Refer to the [mlflow documentation](https://www.mlflow.org/docs/latest/tracking.html) for more information.
+Basic steps:
+1. Install [PyTorch](https://pytorch.org/) 2.0+ and CUDA toolkit 12.4+
+2. Clone repo and run: `FORCE_CUDA=1 pip install -e .`
+3. Set required environment variables (see below)
 
 Note: nnDetection was developed on Linux => Windows is not supported.
 
