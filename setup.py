@@ -73,8 +73,20 @@ def get_extensions():
         if CC is not None:
             extra_compile_args["nvcc"].append("-ccbin={}".format(CC))
 
-    sources = [os.path.join(extensions_dir, s) for s in sources]
-    include_dirs = [str(extensions_dir)]
+    # Set RPATH to find PyTorch libraries at runtime
+    # This ensures the extension can find libc10.so, libtorch.so, etc.
+    torch_lib_path = os.path.join(os.path.dirname(torch.__file__), 'lib')
+    extra_link_args = []
+    if sys.platform.startswith('linux'):
+        extra_link_args = [
+            f'-Wl,-rpath,{torch_lib_path}',           # Absolute path to build-time torch
+            '-Wl,-rpath,$ORIGIN/../torch/lib',        # Relative path (if torch is sibling in venv)
+            '-Wl,-rpath,$ORIGIN/../../torch/lib',     # Alternative relative path
+        ]
+
+    # Convert Path objects to relative strings from setup.py directory
+    sources = [str(s.relative_to(this_dir)) for s in sources]
+    include_dirs = [str(extensions_dir.relative_to(this_dir))]
     
     ext_modules = [
         extension(
@@ -83,26 +95,20 @@ def get_extensions():
             include_dirs=include_dirs,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
+            extra_link_args=extra_link_args,
         )
     ]
     
     return ext_modules
 
-requirements = resolve_requirements(os.path.join(os.path.dirname(__file__),
-                                                 'requirements.txt'))
-readme = read_file(os.path.join(os.path.dirname(__file__), "README.md"))
+# Note: Dependencies are defined in pyproject.toml [project] section
+# setup.py is only used for building C++ extensions
 
 setup(
     name='nndet',
-    version="v0.1",
+    version="0.2.0",  # Synced with pyproject.toml
     packages=find_packages(),
-    # include_package_data=True,
-    test_suite="unittest",
-    long_description=readme,
-    long_description_content_type='text/markdown',
-    install_requires=requirements,
-    tests_require=["coverage"],
-    python_requires=">=3.8",
+    python_requires=">=3.9,<3.13",  # Synced with pyproject.toml
     author="Division of Medical Image Computing, German Cancer Research Center",
     maintainer_email='m.baumgartner@dkfz-heidelberg.de',
     ext_modules=get_extensions(),
