@@ -24,9 +24,9 @@ from datetime import datetime
 from typing import List
 
 import torch
-import pytorch_lightning as pl
-from pytorch_lightning.loggers import MLFlowLogger
-from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
+import lightning.pytorch as pl
+from lightning.pytorch.loggers import MLFlowLogger
+from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
 
 from loguru import logger
 from hydra import initialize_config_module
@@ -239,6 +239,10 @@ def _train(
         trainer_cfg=OmegaConf.to_container(cfg["trainer_cfg"], resolve=True),
         plan=plan,
         )
+    
+    # Verify module is a LightningModule for Lightning 2.x compatibility
+    logger.info(f"Module type: {type(module)}, isinstance check: {isinstance(module, pl.LightningModule)}")
+    
     callbacks = []
     checkpoint_cb = ModelCheckpoint(
         dirpath=train_dir,
@@ -259,35 +263,40 @@ def _train(
     save_pickle(splits, train_dir / "splits.pkl")
 
     trainer_kwargs = {}
+    ckpt_path = None
     if cfg["train"]["mode"].lower() == "resume":
-        trainer_kwargs["resume_from_checkpoint"] = train_dir / "model_last.ckpt"
+        ckpt_path = str(train_dir / "model_last.ckpt")
 
     num_gpus = cfg["trainer_cfg"]["gpus"]
     logger.info(f"Using {num_gpus} GPUs for training")
     plugins = cfg["trainer_cfg"].get("plugins", None)
     logger.info(f"Using {plugins} plugins for training")
 
+    # Lightning 2.x compatibility: gpus -> devices, precision string format
+    precision_val = cfg["trainer_cfg"]["precision"]
+    if precision_val == 16:
+        precision_str = "16-mixed"
+    elif precision_val == 32:
+        precision_str = "32-true"
+    else:
+        precision_str = str(precision_val)
+
     trainer = pl.Trainer(
-        gpus=list(range(num_gpus)) if num_gpus > 1 else num_gpus,
-        accelerator=cfg["trainer_cfg"]["accelerator"],
-        precision=cfg["trainer_cfg"]["precision"],
-        amp_backend=cfg["trainer_cfg"]["amp_backend"],
-        amp_level=cfg["trainer_cfg"]["amp_level"],
+        devices=list(range(num_gpus)) if num_gpus > 1 else num_gpus,
+        accelerator='gpu' if num_gpus > 0 else cfg["trainer_cfg"]["accelerator"],
+        precision=precision_str,
         benchmark=cfg["trainer_cfg"]["benchmark"],
         deterministic=cfg["trainer_cfg"]["deterministic"],
         callbacks=callbacks,
         logger=pl_logger,
         max_epochs=module.max_epochs,
-        progress_bar_refresh_rate=None if bool(int(os.getenv("det_verbose", 1))) else 0,
-        reload_dataloaders_every_epoch=False,
+        enable_progress_bar=bool(int(os.getenv("det_verbose", 1))),
+        reload_dataloaders_every_n_epochs=0,
         num_sanity_val_steps=10,
-        weights_summary='full',
         plugins=plugins,
-        terminate_on_nan=True,  # TODO: make modular
-        move_metrics_to_cpu=False,
         **trainer_kwargs
     )
-    trainer.fit(module, datamodule=datamodule)
+    trainer.fit(module, datamodule=datamodule, ckpt_path=ckpt_path)
 
     if do_sweep:
         case_ids = splits[cfg["exp"]["fold"]]["val"]

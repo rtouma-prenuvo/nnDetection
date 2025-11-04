@@ -34,6 +34,7 @@ class BaseSWA(StochasticWeightAveraging):
     def __init__(
         self,
         swa_epoch_start: int,
+        swa_lrs: float = 1e-4,  # Lightning 2.x requires a positive float
         avg_fn: Optional[_AVG_FN] = None,
         device: Optional[Union[torch.device, str]] = torch.device("cpu"),
         update_statistics: Optional[bool] = False,
@@ -43,6 +44,7 @@ class BaseSWA(StochasticWeightAveraging):
 
         Args:
             swa_epoch_start: Epoch to start SWA weight saving.
+            swa_lrs: Learning rate for SWA (required by Lightning 2.x)
             avg_fn: Function to average saved weights. Defaults to None.
             device: Device to save averaged model. Defaults to 
                 torch.device("cpu").
@@ -53,7 +55,7 @@ class BaseSWA(StochasticWeightAveraging):
         """
         super().__init__(
             swa_epoch_start=swa_epoch_start,
-            swa_lrs=None,
+            swa_lrs=swa_lrs,  # Pass the actual learning rate
             annealing_epochs=10,
             annealing_strategy="cos",
             avg_fn=avg_fn,
@@ -83,26 +85,41 @@ class BaseSWA(StochasticWeightAveraging):
             self._average_model = self._average_model.to(self._device or pl_module.device)
 
             _scheduler = self.get_swa_scheduler(optimizer)
-            # Default scheduler config for Lightning 2.x
-            self._swa_scheduler = {
-                "scheduler": None,
-                "name": None,
-                "interval": "epoch",
-                "frequency": 1,
-                "reduce_on_plateau": False,
-                "monitor": None,
-                "strict": True,
-            }
-            if not isinstance(_scheduler, dict):
-                _scheduler = {"scheduler": _scheduler}
-            self._swa_scheduler.update(_scheduler)
-
-            if trainer.lr_schedulers:
-                lr_scheduler = trainer.lr_schedulers[0]["scheduler"]
-                rank_zero_warn(f"Swapping lr_scheduler {lr_scheduler} for {self._swa_scheduler}")
-                trainer.lr_schedulers[0] = self._swa_scheduler
+            
+            # Store the actual scheduler object for state_dict()
+            if isinstance(_scheduler, dict):
+                self._swa_scheduler = _scheduler.get("scheduler")
+                swa_scheduler_config = _scheduler
             else:
-                trainer.lr_schedulers.append(self._swa_scheduler)
+                self._swa_scheduler = _scheduler
+                # Default scheduler config for Lightning 2.x
+                swa_scheduler_config = {
+                    "scheduler": _scheduler,
+                    "name": None,
+                    "interval": "epoch",
+                    "frequency": 1,
+                    "reduce_on_plateau": False,
+                    "monitor": None,
+                    "strict": True,
+                }
+
+            # Lightning 2.x: lr_schedulers -> lr_scheduler_configs (now LRSchedulerConfig objects)
+            lr_scheduler_configs = getattr(trainer, 'lr_scheduler_configs', getattr(trainer, 'lr_schedulers', []))
+            if lr_scheduler_configs:
+                # Lightning 2.x uses LRSchedulerConfig objects with .scheduler attribute
+                if hasattr(lr_scheduler_configs[0], 'scheduler'):
+                    lr_scheduler = lr_scheduler_configs[0].scheduler
+                else:
+                    lr_scheduler = lr_scheduler_configs[0]["scheduler"]
+                rank_zero_warn(f"Swapping lr_scheduler {lr_scheduler} for SWA scheduler")
+                # Replace the scheduler in the config object
+                if hasattr(lr_scheduler_configs[0], 'scheduler'):
+                    lr_scheduler_configs[0].scheduler = self._swa_scheduler
+                else:
+                    lr_scheduler_configs[0] = swa_scheduler_config
+            else:
+                # If no schedulers exist, we can skip SWA scheduler swap
+                logger.warning("No lr_schedulers found, skipping SWA scheduler swap")
 
             self.n_averaged = torch.tensor(0, dtype=torch.long, device=pl_module.device)
 
@@ -154,6 +171,7 @@ class SWACycleLinear(BaseSWA):
         """
         super().__init__(
             swa_epoch_start=swa_epoch_start,
+            swa_lrs=cycle_initial_lr,  # Use cycle_initial_lr for Lightning 2.x
             avg_fn=avg_fn,
             device=device,
             update_statistics=update_statistics,
