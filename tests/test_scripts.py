@@ -10,35 +10,35 @@ class TestScripts:
     
     def test_generate_example_script(self):
         """Test generate_example script"""
-        from scripts.generate_example import main
+        from nndet.scripts.generate_example import main
         assert callable(main)
     
     def test_preprocess_script(self):
         """Test preprocess script"""
-        from scripts.preprocess import main
+        from nndet.scripts.preprocess import main
         assert callable(main)
     
     def test_convert_scripts(self):
         """Test conversion scripts"""
-        from scripts.convert_cls2fg import main as cls2fg_main
-        from scripts.convert_seg2det import main as seg2det_main
+        from nndet.scripts.convert_cls2fg import main as cls2fg_main
+        from nndet.scripts.convert_seg2det import main as seg2det_main
         
         assert callable(cls2fg_main)
         assert callable(seg2det_main)
     
     def test_predict_script(self):
         """Test predict script"""
-        from scripts.predict import main
+        from nndet.scripts.predict import main
         assert callable(main)
     
     def test_consolidate_script(self):
         """Test consolidate script"""
-        from scripts.consolidate import main
+        from nndet.scripts.consolidate import main
         assert callable(main)
     
     def test_utils_scripts(self):
         """Test utility scripts"""
-        from scripts.utils import (
+        from nndet.scripts.utils import (
             boxes2nii,
             seg2nii,
             unpack,
