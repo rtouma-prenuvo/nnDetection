@@ -4,7 +4,13 @@
 
 set -e
 
-VERSION="0.2.0"
+# Read version from pyproject.toml dynamically
+VERSION=$(grep -E '^version\s*=' pyproject.toml | sed -E 's/.*version\s*=\s*"([^"]+)".*/\1/')
+if [ -z "$VERSION" ]; then
+    echo "ERROR: Could not determine version from pyproject.toml"
+    exit 1
+fi
+
 CUDA_VERSION="cu124"
 PYTHON_VERSION="cp312"
 
@@ -92,18 +98,29 @@ fi
 echo ""
 echo "Renaming wheel to include CUDA version..."
 cd dist
-for wheel in nndet-${VERSION}-*.whl; do
+WHEEL_NAME=""
+# Escape dots in version for sed pattern matching
+VERSION_ESCAPED=$(echo "$VERSION" | sed 's/\./\\./g')
+# Try to find wheel matching version first, then any nndet wheel
+for wheel in nndet-${VERSION}-*.whl nndet-*.whl; do
     if [ -f "$wheel" ]; then
-        # Insert +cu124 after version number
-        new_name=$(echo $wheel | sed "s/${VERSION}/${VERSION}+${CUDA_VERSION}/")
+        # Insert +cu124 after version number (before the first hyphen after version)
+        new_name=$(echo "$wheel" | sed "s/\(${VERSION_ESCAPED}\)\(-[^+]*\.whl\)/\1+${CUDA_VERSION}\2/")
         mv "$wheel" "$new_name"
         echo "✓ Created: $new_name"
         
         # Store wheel name for later
         WHEEL_NAME="$new_name"
+        break
     fi
 done
 cd ..
+
+# Check if wheel was found
+if [ -z "$WHEEL_NAME" ]; then
+    echo "ERROR: No wheel file found in dist/ directory!"
+    exit 1
+fi
 
 # Verify wheel contents
 echo ""
@@ -111,8 +128,17 @@ echo "Verifying wheel contents..."
 python -c "
 import zipfile
 import sys
+import os
 
 wheel_path = 'dist/${WHEEL_NAME}'
+
+if not os.path.exists(wheel_path):
+    print(f'ERROR: Wheel file not found: {wheel_path}')
+    sys.exit(1)
+
+if not os.path.isfile(wheel_path):
+    print(f'ERROR: Path is not a file: {wheel_path}')
+    sys.exit(1)
 
 with zipfile.ZipFile(wheel_path, 'r') as zf:
     files = zf.namelist()
