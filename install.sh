@@ -1,6 +1,6 @@
 #!/bin/bash
 # Automated installation script for nnDetection with C++ CUDA extensions
-# For CUDA 12.4 + PyTorch 2.6
+# For CUDA 13.0+ and PyTorch 2.13
 
 set -e
 
@@ -15,15 +15,15 @@ if [ ! -f "setup.py" ]; then
     exit 1
 fi
 
-# Step 1: Install PyTorch 2.6 with CUDA 12.4
-echo "Step 1: Installing PyTorch 2.6.0 with CUDA 12.4..."
-pip install -r requirements-cu124.txt
+# Step 1: Install PyTorch 2.13 with CUDA 13.0
+echo "Step 1: Installing PyTorch 2.13.0 with CUDA 13.0..."
+pip install -r requirements-cu130.txt
 
 echo ""
 echo "Step 2: Setting up CUDA environment..."
 
 # Set CUDA environment variables
-export CUDA_HOME=/usr/local/cuda-12.4
+export CUDA_HOME=/usr/local/cuda
 export PATH=$CUDA_HOME/bin:$PATH
 export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
 
@@ -31,11 +31,14 @@ export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
 # 7.5 = Tesla T4, RTX 2080
 # 8.0 = A100
 # 8.6 = RTX 3090, A6000, A40
-export TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6"
+# 8.9 = RTX 4090, L4, L40
+# 9.0 = H100, H200 (Hopper)
+# 10.0 = B100, B200 (Blackwell)
+export TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0;10.0"
 
 # Verify CUDA
 if ! command -v nvcc &> /dev/null; then
-    echo "Warning: nvcc not found. Make sure CUDA toolkit 12.4 is installed."
+    echo "Warning: nvcc not found. Make sure CUDA toolkit 13.x is installed."
     echo "C++ extensions will not be built."
     read -p "Continue anyway? (y/N) " -n 1 -r
     echo

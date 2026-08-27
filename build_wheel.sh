@@ -1,6 +1,6 @@
 #!/bin/bash
 # Build wheel for nnDetection with C++ CUDA extensions
-# For CUDA 12.4 and PyTorch 2.6.0+cu124
+# For CUDA 13.0 and PyTorch 2.13.0+cu130
 
 set -e
 
@@ -11,8 +11,8 @@ if [ -z "$VERSION" ]; then
     exit 1
 fi
 
-CUDA_VERSION="cu124"
-PYTHON_VERSION="cp312"
+CUDA_VERSION="cu130"
+PYTHON_VERSION="cp313"
 
 echo "========================================"
 echo "nnDetection Wheel Build Script"
@@ -34,15 +34,15 @@ python -c "
 import torch
 import sys
 
-expected_cuda = '12.4'
+expected_cuda = '13.0'
 actual_cuda = torch.version.cuda
 
-if actual_cuda != expected_cuda:
+if not actual_cuda.startswith('13.'):
     print(f'ERROR: PyTorch CUDA version mismatch!')
-    print(f'Expected: {expected_cuda}, Got: {actual_cuda}')
+    print(f'Expected: {expected_cuda}+, Got: {actual_cuda}')
     print(f'')
     print('Install correct PyTorch version:')
-    print('  pip install -r requirements-cu124.txt')
+    print('  pip install -r requirements-cu130.txt')
     sys.exit(1)
 
 print(f'✓ PyTorch {torch.__version__} (CUDA {actual_cuda})')
@@ -55,7 +55,7 @@ fi
 # Set CUDA environment variables
 echo ""
 echo "Setting CUDA environment..."
-export CUDA_HOME=/usr/local/cuda-12.4
+export CUDA_HOME=/usr/local/cuda
 export PATH=$CUDA_HOME/bin:$PATH
 export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
 
@@ -63,13 +63,15 @@ export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
 # 7.5 = Tesla T4, RTX 2080
 # 8.0 = A100
 # 8.6 = RTX 3090, A6000, A40  
-# 8.9 = RTX 4090, H100, L4, L40
-export TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9"
+# 8.9 = RTX 4090, L4, L40
+# 9.0 = H100, H200 (Hopper)
+# 10.0 = B100, B200 (Blackwell)
+export TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;8.9;9.0;10.0"
 
 # Verify CUDA toolkit
 if ! command -v nvcc &> /dev/null; then
     echo "ERROR: nvcc not found!"
-    echo "Make sure CUDA toolkit 12.4 is installed at $CUDA_HOME"
+    echo "Make sure CUDA toolkit 13.x is installed at $CUDA_HOME"
     exit 1
 fi
 
@@ -175,7 +177,7 @@ python -m venv venv
 source venv/bin/activate
 
 # Install PyTorch first
-pip install -q torch==2.6.0+cu124 torchvision==0.21.0+cu124 --index-url https://download.pytorch.org/whl/cu124
+pip install -q torch==2.13.0+cu130 torchvision==0.28.0+cu130 --index-url https://download.pytorch.org/whl/cu130
 
 # Install our wheel (use saved path from earlier)
 WHEEL_PATH="${NNDET_DIR}/dist/${WHEEL_NAME}"
@@ -202,7 +204,7 @@ try:
 except ImportError as e:
     print(f'✗ C++ extensions not available: {e}')
     # Check if .so file exists
-    so_path = os.path.join(nndet_path, '_C.cpython-312-x86_64-linux-gnu.so')
+    so_path = os.path.join(nndet_path, '_C.cpython-313-x86_64-linux-gnu.so')
     if os.path.exists(so_path):
         print(f'  Note: .so file exists at {so_path}')
         print(f'  This is likely a runtime library path issue')

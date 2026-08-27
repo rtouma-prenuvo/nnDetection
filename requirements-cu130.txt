@@ -1,0 +1,6 @@
+# PyTorch 2.13 with CUDA 13.0 support
+torch==2.13.0+cu130
+torchvision==0.28.0+cu130
+
+# Install from PyTorch CUDA 13.0 index
+--extra-index-url https://download.pytorch.org/whl/cu130

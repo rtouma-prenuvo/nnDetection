@@ -106,9 +106,9 @@ def get_extensions():
 
 setup(
     name='nndet',
-    version="0.2.0",  # Synced with pyproject.toml
+    version="0.3.0",  # Synced with pyproject.toml
     packages=find_packages(),
-    python_requires=">=3.9,<3.13",  # Synced with pyproject.toml
+    python_requires=">=3.10,<3.14",  # Synced with pyproject.toml
     author="Division of Medical Image Computing, German Cancer Research Center",
     maintainer_email='m.baumgartner@dkfz-heidelberg.de',
     ext_modules=get_extensions(),
