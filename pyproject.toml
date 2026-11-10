@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nndet"
-version = "0.3.0"
+version = "0.3.1"
 description = "Self-configuring framework for 3D (medical) object detection"
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
@@ -52,7 +52,6 @@ dependencies = [
     "tqdm",
     "loguru",
     "hydra-core>=1.1.0",
-    "mlflow",
     "GitPython",
     "matplotlib",
     "seaborn",
@@ -61,6 +60,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Training only: nndet_train logs through MLFlowLogger; inference never imports mlflow.
+train = [
+    "mlflow",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",

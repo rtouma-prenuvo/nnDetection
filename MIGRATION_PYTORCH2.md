@@ -123,7 +123,7 @@ export TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6"  # Adjust for your GPU
 
 ```bash
 cd /path/to/nnDetection
-FORCE_CUDA=1 pip install -e .
+FORCE_CUDA=1 pip install -e ".[train]"  # train extra: mlflow for nndet_train
 ```
 
 **What happens during build:**

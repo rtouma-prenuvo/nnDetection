@@ -49,7 +49,7 @@ if ! command -v nvcc &> /dev/null; then
     # Install without CUDA extensions
     echo ""
     echo "Step 3: Installing nnDetection (without C++ extensions)..."
-    pip install -e .
+    pip install -e ".[train]"
 else
     echo "CUDA found: $(nvcc --version | grep release)"
     
@@ -61,7 +61,7 @@ else
     # Build with CUDA extensions
     echo ""
     echo "Step 3: Installing nnDetection with C++ CUDA extensions..."
-    FORCE_CUDA=1 pip install -e . --no-build-isolation
+    FORCE_CUDA=1 pip install -e ".[train]" --no-build-isolation
 fi
 
 # Verify installation

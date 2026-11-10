@@ -77,7 +77,7 @@ For PyTorch 2.x / Lightning 2.x installations, see detailed instructions in [MIG
 
 Basic steps:
 1. Install [PyTorch](https://pytorch.org/) 2.0+ and CUDA toolkit 12.4+
-2. Clone repo and run: `FORCE_CUDA=1 pip install -e .`
+2. Clone repo and run: `FORCE_CUDA=1 pip install -e ".[train]"` (the `train` extra adds mlflow for `nndet_train`; inference needs only `.`)
 3. Set required environment variables (see below)
 
 Note: nnDetection was developed on Linux => Windows is not supported.
